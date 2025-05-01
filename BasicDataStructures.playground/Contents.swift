@@ -2,27 +2,43 @@ import Foundation
 
 // MARK: - Задание 1: Реализация динамических массивов
 
+
 protocol DynamicArray {
     associatedtype T
     func add(item: T, at index: Int)
-    func remove(at index: Int) -> T
+    func remove(at index: Int) -> T?
 }
 
 class SingleArray<T>: DynamicArray {
     private var array: [T?] = []
-
+    
     func add(item: T, at index: Int) {
-        if index < 0 || index > array.count {
-            fatalError("Index out of bounds")
+        guard index >= 0, index <= array.count else { return }
+        
+        var newArray = [T?](repeating: nil, count: array.count + 1)
+        for i in 0..<index {
+            newArray[i] = array[i]
         }
-        array.insert(item, at: index)
+        newArray[index] = item
+        for i in index..<array.count {
+            newArray[i + 1] = array[i]
+        }
+        array = newArray
     }
-
-    func remove(at index: Int) -> T {
-        if index < 0 || index >= array.count {
-            fatalError("Index out of bounds")
+    
+    func remove(at index: Int) -> T? {
+        guard index >= 0, index < array.count else { return nil }
+        
+        let removedItem = array[index]
+        var newArray = [T?](repeating: nil, count: array.count - 1)
+        for i in 0..<index {
+            newArray[i] = array[i]
         }
-        return array.remove(at: index)!
+        for i in (index + 1)..<array.count {
+            newArray[i - 1] = array[i]
+        }
+        array = newArray
+        return removedItem
     }
 }
 
@@ -34,24 +50,41 @@ class VectorArray<T>: DynamicArray {
     init(vectorSize: Int) {
         self.vectorSize = vectorSize
         self.capacity = vectorSize
+        array = [T?](repeating: nil, count: capacity)
     }
 
     func add(item: T, at index: Int) {
-        if index < 0 || index > array.count {
-            fatalError("Index out of bounds")
-        }
+        guard index >= 0, index <= array.count else { return }
+
         if array.count >= capacity {
             capacity += vectorSize
-            array += Array(repeating: nil, count: vectorSize)
+            array += [T?](repeating: nil, count: vectorSize)
         }
-        array.insert(item, at: index)
+
+        var newArray = [T?](repeating: nil, count: array.count + 1)
+        for i in 0..<index {
+            newArray[i] = array[i]
+        }
+        newArray[index] = item
+        for i in index..<array.count {
+            newArray[i + 1] = array[i]
+        }
+        array = newArray
     }
 
-    func remove(at index: Int) -> T {
-        if index < 0 || index >= array.count {
-            fatalError("Index out of bounds")
+    func remove(at index: Int) -> T? {
+        guard index >= 0, index < array.count else { return nil }
+
+        let removedItem = array[index]
+        var newArray = [T?](repeating: nil, count: array.count - 1)
+        for i in 0..<index {
+            newArray[i] = array[i]
         }
-        return array.remove(at: index)!
+        for i in (index + 1)..<array.count {
+            newArray[i - 1] = array[i]
+        }
+        array = newArray
+        return removedItem
     }
 }
 
@@ -61,28 +94,41 @@ class FactorArray<T> {
     private var capacity = 1
 
     func add(item: T, at index: Int) {
-        if index < 0 || index > count {
-            fatalError("Index out of bounds")
-        }
+        guard index >= 0, index <= count else { return }
+
         if count >= capacity {
-            // Увеличиваем емкость в 1.5 раза и гарантируем, что она больше текущего размера
             capacity = max(capacity * 3 / 2, count + 1)
-            var newArray = Array<T?>(repeating: nil, count: capacity)
+            var newArray = [T?](repeating: nil, count: capacity)
             for i in 0..<array.count {
                 newArray[i] = array[i]
             }
             array = newArray
         }
-        array.insert(item, at: index)
+
+        var newArray = [T?](repeating: nil, count: array.count + 1)
+        for i in 0..<index {
+            newArray[i] = array[i]
+        }
+        newArray[index] = item
+        for i in index..<array.count {
+            newArray[i + 1] = array[i]
+        }
+        array = newArray
         count += 1
     }
 
-    func remove(at index: Int) -> T {
-        if index < 0 || index >= count {
-            fatalError("Index out of bounds")
+    func remove(at index: Int) -> T? {
+        guard index >= 0, index < count else { return nil }
+
+        let removedItem = array[index]
+        var newArray = [T?](repeating: nil, count: array.count - 1)
+        for i in 0..<index {
+            newArray[i] = array[i]
         }
-        let removedItem = array[index]!
-        array.remove(at: index)
+        for i in (index + 1)..<array.count {
+            newArray[i - 1] = array[i]
+        }
+        array = newArray
         count -= 1
         return removedItem
     }
@@ -98,16 +144,12 @@ class MatrixArray<T>: DynamicArray {
     }
 
     func add(item: T, at index: Int) {
-        if index < 0 || index > size {
-            fatalError("Index out of bounds")
-        }
+        guard index >= 0, index <= size else { return }
 
         if size == arrays.count * matrixSize {
-            // Когда массив заполнен, добавляем новый подмассив
             arrays.append([T?](repeating: nil, count: matrixSize))
         }
 
-        // Вычисляем индексы подмассива и позиции в нем
         let rowIndex = size / matrixSize
         let colIndex = size % matrixSize
 
@@ -115,37 +157,30 @@ class MatrixArray<T>: DynamicArray {
         size += 1
     }
 
-    func remove(at index: Int) -> T {
-        if index < 0 || index >= size {
-            fatalError("Index out of bounds")
-        }
+    func remove(at index: Int) -> T? {
+        guard index >= 0, index < size else { return nil }
 
-        // Находим индексы строки и столбца
         let rowIndex = index / matrixSize
         let colIndex = index % matrixSize
 
-        let item = arrays[rowIndex][colIndex]!
+        let item = arrays[rowIndex][colIndex]
         arrays[rowIndex][colIndex] = nil
         size -= 1
-        
+
         return item
     }
 }
 
 class ArrayList<T>: DynamicArray {
     private var array: [T] = []
-    
+
     func add(item: T, at index: Int) {
-        if index < 0 || index > array.count {
-            fatalError("Index out of bounds")
-        }
+        guard index >= 0, index <= array.count else { return }
         array.insert(item, at: index)
     }
 
-    func remove(at index: Int) -> T {
-        if index < 0 || index >= array.count {
-            fatalError("Index out of bounds")
-        }
+    func remove(at index: Int) -> T? {
+        guard index >= 0, index < array.count else { return nil }
         return array.remove(at: index)
     }
 }
@@ -157,66 +192,80 @@ func measureExecutionTime(operation: () -> Void) -> Double {
     operation()
     let end = DispatchTime.now()
     let nanoTime = end.uptimeNanoseconds - start.uptimeNanoseconds
-    return Double(nanoTime) / 1_000_000 // время в миллисекундах
+    return Double(nanoTime) / 1_000_000
 }
 
-let elementsCountArray = [10, 100, 1000, 5000]
+let elementsCountArray = [10, 100, 1000, 2000]
 
-// Для хранения результатов
-var results: [(numberOfElements: Int, arrayListTime: Double, singleArrayTime: Double, vectorArrayTime: Double, factorArrayTime: Double, matrixArrayTime: Double)] = []
+print("\nТаблица времени выполнения (в миллисекундах):\n")
+print([
+    "Элементов".padding(toLength: 10, withPad: " ", startingAt: 0),
+    "ArrayList".padding(toLength: 12, withPad: " ", startingAt: 0),
+    "SingleArray".padding(toLength: 12, withPad: " ", startingAt: 0),
+    "VectorArray".padding(toLength: 12, withPad: " ", startingAt: 0),
+    "FactorArray".padding(toLength: 12, withPad: " ", startingAt: 0),
+    "MatrixArray".padding(toLength: 12, withPad: " ", startingAt: 0)
+].joined(separator: " | "))
 
 for numberOfElements in elementsCountArray {
-    // Создаем новые экземпляры массивов для каждого измерения
-    let arrayList = ArrayList<Int>()
-    let singleArray = SingleArray<Int>()
-    let vectorArray = VectorArray<Int>(vectorSize: 10)
-    let factorArray = FactorArray<Int>()
-    let matrixArray = MatrixArray<Int>(matrixSize: 10)
-
-    // Замеры для ArrayList
-    let executionTimeArrayList = measureExecutionTime {
-        for i in 0..<numberOfElements {
-            arrayList.add(item: i, at: i)
+    autoreleasepool {
+        let arrayList = ArrayList<Int>()
+        let singleArray = SingleArray<Int>()
+        let vectorArray = VectorArray<Int>(vectorSize: 10)
+        let factorArray = FactorArray<Int>()
+        let matrixArray = MatrixArray<Int>(matrixSize: 10)
+        
+        let executionTimeArrayList = measureExecutionTime {
+            autoreleasepool {
+                for i in 0..<numberOfElements {
+                    arrayList.add(item: i, at: i)
+                }
+            }
         }
-    }
-
-    // Замеры для SingleArray
-    let executionTimeSingleArray = measureExecutionTime {
-        for i in 0..<numberOfElements {
-            singleArray.add(item: i, at: i)
+        
+        let executionTimeSingleArray = measureExecutionTime {
+            autoreleasepool {
+                for i in 0..<numberOfElements {
+                    singleArray.add(item: i, at: i)
+                }
+            }
         }
-    }
-
-    // Замеры для VectorArray
-    let executionTimeVectorArray = measureExecutionTime {
-        for i in 0..<numberOfElements {
-            vectorArray.add(item: i, at: i)
+        
+        let executionTimeVectorArray = measureExecutionTime {
+            autoreleasepool {
+                for i in 0..<numberOfElements {
+                    vectorArray.add(item: i, at: i)
+                }
+            }
         }
-    }
-
-    // Замеры для FactorArray
-    let executionTimeFactorArray = measureExecutionTime {
-        for i in 0..<numberOfElements {
-            factorArray.add(item: i, at: i)
+        
+        let executionTimeFactorArray = measureExecutionTime {
+            autoreleasepool {
+                for i in 0..<numberOfElements {
+                    factorArray.add(item: i, at: i)
+                }
+            }
         }
-    }
-
-    // Замеры для MatrixArray
-    let executionTimeMatrixArray = measureExecutionTime {
-        for i in 0..<numberOfElements {
-            matrixArray.add(item: i, at: i)
+        
+        let executionTimeMatrixArray = measureExecutionTime {
+            autoreleasepool {
+                for i in 0..<numberOfElements {
+                    matrixArray.add(item: i, at: i)
+                }
+            }
         }
+        
+        let row = [
+            String(numberOfElements).padding(toLength: 10, withPad: " ", startingAt: 0),
+            String(format: "%.2f", executionTimeArrayList).padding(toLength: 12, withPad: " ", startingAt: 0),
+            String(format: "%.2f", executionTimeSingleArray).padding(toLength: 12, withPad: " ", startingAt: 0),
+            String(format: "%.2f", executionTimeVectorArray).padding(toLength: 12, withPad: " ", startingAt: 0),
+            String(format: "%.2f", executionTimeFactorArray).padding(toLength: 12, withPad: " ", startingAt: 0),
+            String(format: "%.2f", executionTimeMatrixArray).padding(toLength: 12, withPad: " ", startingAt: 0)
+        ].joined(separator: " | ")
+        
+        print(row)
     }
-
-    // Сохраняем результаты для этого числа элементов
-    results.append((numberOfElements, executionTimeArrayList, executionTimeSingleArray, executionTimeVectorArray, executionTimeFactorArray, executionTimeMatrixArray))
-}
-
-// Выводим таблицу с результатами
-print("Таблица времени выполнения для разных значений numberOfElements, в мс:")
-print("Элементов\t| ArrayList \t| SingleArray \t| VectorArray \t| FactorArray \t| MatrixArray ")
-for result in results {
-    print("\(result.numberOfElements)\t| \(String(format: "%.2f", result.arrayListTime))\t| \(String(format: "%.2f", result.singleArrayTime))\t| \(String(format: "%.2f", result.vectorArrayTime))\t| \(String(format: "%.2f", result.factorArrayTime))\t| \(String(format: "%.2f", result.matrixArrayTime))")
 }
 
 // MARK: - Задание 3: Приоритетная очередь
